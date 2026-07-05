@@ -7,9 +7,9 @@ const toyyibpay = require("../lib/payments/toyyibpay");
 const router = express.Router();
 
 function appBaseUrl() {
-  // Aggressively trim to remove any invisible spaces copied from the Render dashboard
-  const url = (process.env.APP_BASE_URL || "").trim();
-  return (url || `http://localhost:${process.env.PORT || 3000}`).replace(/\/$/, "");
+  // Strip trailing slashes and spaces entirely
+  const url = (process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 3000}`).trim();
+  return url.replace(/\/+$/, ""); 
 }
 
 function getPackage(id) {
@@ -108,6 +108,7 @@ router.post("/:id/pay", requireRole("customer"), async (req, res) => {
     if (method === "toyyibpay") {
       const base = appBaseUrl();
       
+      // Keep URLs absolutely plain (no query parameters)
       const returnUrl = `${base}/payment-return.html`;
       const callbackUrl = `${base}/api/bookings/payment-callback`;
 
@@ -115,13 +116,11 @@ router.post("/:id/pay", requireRole("customer"), async (req, res) => {
         db,
         amount: booking.deposit_amount,
         bookingId: booking.id,
-        packageLabel: `${booking.package_code} ${booking.package_name}`,
-        bookingDate: booking.booking_date,
+        returnUrl: returnUrl,
+        callbackUrl: callbackUrl,
         customerName: booking.customer_name,
         customerEmail: booking.customer_email,
         customerPhone: booking.customer_phone,
-        returnUrl: returnUrl,
-        callbackUrl: callbackUrl,
       });
 
       db.prepare("INSERT INTO payments (booking_id, amount, method, reference, status, notes) VALUES (?, ?, 'toyyibpay', ?, 'pending', 'Awaiting payment')")
