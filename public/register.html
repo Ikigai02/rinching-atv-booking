@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Register - Rinching ATV</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="navbar" class="navbar"></div>
+<div class="container narrow">
+  <div class="card">
+    <h2>Create a Customer Account</h2>
+    <div id="alertBox"></div>
+    <form id="regForm">
+      <label>Full Name</label>
+      <input type="text" name="name" required />
+      <label>Email</label>
+      <input type="email" name="email" required />
+      <label>Phone</label>
+      <input type="tel" name="phone" placeholder="e.g. 012-345 6789" />
+      <label>Date of Birth</label>
+      <input type="date" name="dob" required />
+      <label>Password (min 8 characters)</label>
+      <input type="password" name="password" minlength="8" required />
+      <div class="checkbox-row" id="guardianRow" style="display:none">
+        <input type="checkbox" name="guardian_consent" id="guardian_consent" />
+        <label for="guardian_consent" style="margin:0">I confirm parental/guardian consent has been given for this account (required for customers under 16).</label>
+      </div>
+      <button class="btn" style="margin-top:18px;width:100%" type="submit">Register</button>
+    </form>
+    <p class="muted" style="margin-top:16px">Already have an account? <a href="/login.html">Log in</a></p>
+  </div>
+</div>
+<script src="/js/api.js"></script>
+<script>
+  (async () => { renderNav(await getCurrentUser()); })();
+
+  const dobInput = document.querySelector('input[name="dob"]');
+  const guardianRow = document.getElementById("guardianRow");
+  dobInput.addEventListener("change", () => {
+    const age = Math.floor((Date.now() - new Date(dobInput.value)) / (365.25 * 24 * 3600 * 1000));
+    guardianRow.style.display = age < 16 ? "flex" : "none";
+  });
+
+  document.getElementById("regForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const alertBox = document.getElementById("alertBox");
+    const fd = new FormData(e.target);
+    try {
+      const user = await api("/auth/register", {
+        method: "POST",
+        body: {
+          name: fd.get("name"),
+          email: fd.get("email"),
+          phone: fd.get("phone"),
+          dob: fd.get("dob"),
+          password: fd.get("password"),
+          guardian_consent: document.getElementById("guardian_consent").checked,
+        },
+      });
+      window.location.href = roleHome(user.role);
+    } catch (err) {
+      showAlert(alertBox, err.message);
+    }
+  });
+</script>
+</body>
+</html>

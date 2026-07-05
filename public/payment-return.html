@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Payment Result - Rinching ATV</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="navbar" class="navbar"></div>
+<div class="container narrow">
+  <div class="card">
+    <h2>Payment Result</h2>
+    <div id="out">
+      <div class="alert info">Checking your payment status with toyyibPay&hellip;</div>
+    </div>
+  </div>
+</div>
+<script src="/js/api.js"></script>
+<script>
+  (async () => {
+    const user = await guardPage(["customer"]);
+    if (!user) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const bookingId = params.get("booking");
+    const out = document.getElementById("out");
+    if (!bookingId) {
+      showAlert(out, "Missing booking reference.");
+      return;
+    }
+
+    try {
+      const res = await api(`/bookings/${bookingId}/payment-status`);
+      const b = res.booking;
+      if (b.status === "confirmed") {
+        out.innerHTML = `<div class="alert success"><strong>Payment confirmed!</strong> Booking #RATV-${String(b.id).padStart(5, "0")} is now confirmed. Admin will send your official confirmation shortly.</div>
+          <a class="btn" href="/my-bookings.html">Go to My Bookings</a>`;
+      } else if (res.payment && res.payment.status === "failed") {
+        out.innerHTML = `<div class="alert error"><strong>Payment failed or was cancelled.</strong> Your slot hold may still be active - you can try paying again from My Bookings if the countdown hasn't expired.</div>
+          <a class="btn" href="/my-bookings.html">Go to My Bookings</a>`;
+      } else if (b.status === "expired") {
+        out.innerHTML = `<div class="alert error"><strong>Your hold expired</strong> before payment could be confirmed. Please start a new booking.
+          If toyyibPay shows the payment as successful, contact Admin with your reference so it can be reconciled manually.</div>
+          <a class="btn" href="/book.html">Book Again</a>`;
+      } else {
+        out.innerHTML = `<div class="alert info">Payment is still <strong>${statusLabel(res.payment ? res.payment.status : b.status)}</strong>.
+          If you just completed payment, wait a moment and refresh this page.</div>
+          <button class="btn small outline" onclick="location.reload()">Refresh</button>
+          <a class="btn small" href="/my-bookings.html">Go to My Bookings</a>`;
+      }
+    } catch (err) {
+      showAlert(out, err.message);
+    }
+  })();
+</script>
+</body>
+</html>
