@@ -252,7 +252,8 @@ async function submitPayment() {
     const res = await api(`/bookings/${booking.id}/pay`, { method: "POST", body: { method, reference } });
 
     if (res.redirectUrl) {
-      // Real toyyibPay sandbox flow: send the browser to the hosted payment page.
+      // Store ID securely in localStorage to retrieve on the return page
+      localStorage.setItem("pendingBookingId", booking.id);
       resultSection.innerHTML = `<div class="alert info">Redirecting you to toyyibPay to complete your deposit payment&hellip;</div>`;
       window.location.href = res.redirectUrl;
       return;
@@ -286,7 +287,7 @@ async function submitPayment() {
       document.getElementById("minDateHelp").textContent =
         `Bookings must be made at least ${window_.minAdvanceDays} day(s) in advance - earliest available date is ${window_.minDate}.`;
     } catch (err) {
-      // Non-fatal: the backend still enforces this even if the hint fails to load.
+      // Non-fatal
     }
     goStep(1);
   });
