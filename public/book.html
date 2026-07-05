@@ -113,11 +113,30 @@
 <script>
 let user, packages, chosenPackage, availData, chosenTime, booking, countdownTimer;
 
-function goStep(n) {
+function goStep(n, skipHistory = false) {
   document.querySelectorAll(".step").forEach((s) => s.classList.toggle("active", s.dataset.step == n));
   document.querySelectorAll(".dot").forEach((d) => d.classList.toggle("active", d.dataset.step <= n));
   document.getElementById("alertBox").innerHTML = "";
+
+  // Tell the browser history that we changed steps
+  if (!skipHistory) {
+    history.pushState({ step: n }, `Step ${n}`, `#step${n}`);
+  }
 }
+
+
+window.addEventListener("popstate", (event) => {
+  if (event.state && event.state.step !== undefined) {
+    // If the browser remembers the step, go to it without pushing to history again
+    goStep(event.state.step, true);
+  } else {
+    // Fallback to the first step
+    goStep(0, true);
+  }
+});
+
+// Save the very first step into the browser history when the page loads
+history.replaceState({ step: 0 }, "Step 0", "#step0");
 
 function renderPackages() {
   const grid = document.getElementById("pkgGrid");
