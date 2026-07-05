@@ -1,0 +1,18 @@
+{
+  "name": "rinching-atv-booking-system",
+  "version": "1.0.0",
+  "description": "Rinching ATV Adventure Park Booking System - a full web booking system for Customer, Admin, and Marshall users.",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "reseed": "rm -f db/rinching.db && node -e \"require('./db/database.js')\""
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0"
+  }
+}
