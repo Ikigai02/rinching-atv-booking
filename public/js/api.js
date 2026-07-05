@@ -63,7 +63,9 @@ function renderNav(user) {
     links.push('<button class="pill" id="logoutBtn">Log out</button>');
   }
   el.innerHTML = `
-    <div class="brand">RINCHING<span> ATV</span> ADVENTURE PARK</div>
+    <a href="/index.html" style="text-decoration: none; color: inherit;">
+      <div class="brand">RINCHING<span> ATV</span> ADVENTURE PARK</div>
+    </a>
     <nav>${links.join("")}</nav>
   `;
   const logoutBtn = document.getElementById("logoutBtn");
