@@ -7,7 +7,9 @@ const toyyibpay = require("../lib/payments/toyyibpay");
 const router = express.Router();
 
 function appBaseUrl() {
-  return (process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 3000}`).replace(/\/$/, "");
+  // Aggressively trim to remove any invisible spaces copied from the Render dashboard
+  const url = (process.env.APP_BASE_URL || "").trim();
+  return (url || `http://localhost:${process.env.PORT || 3000}`).replace(/\/$/, "");
 }
 
 function getPackage(id) {
@@ -106,7 +108,6 @@ router.post("/:id/pay", requireRole("customer"), async (req, res) => {
     if (method === "toyyibpay") {
       const base = appBaseUrl();
       
-      // Clean URLs with NO query parameters to bypass URI character filtering
       const returnUrl = `${base}/payment-return.html`;
       const callbackUrl = `${base}/api/bookings/payment-callback`;
 
