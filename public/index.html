@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Rinching ATV Adventure Park</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="navbar" class="navbar"></div>
+
+<div class="hero">
+  <h1>Rinching ATV Adventure Park</h1>
+  <p>Guided ATV trail riding experiences since 2014. Book your ride online, skip the WhatsApp back-and-forth, and get an instant confirmation.</p>
+  <a class="btn secondary" href="/book.html">Book a Ride Now</a>
+</div>
+
+<div class="container">
+  <h2 style="text-align:center">Choose Your Trail Package</h2>
+  <p class="muted" style="text-align:center">Package C is our most popular ride. All riders must be briefed on safety and age requirements before departure.</p>
+  <div class="pkg-grid" id="pkgGrid"></div>
+</div>
+
+<footer>Rinching ATV Adventure Park Booking System &mdash; demo build for ISP550 coursework.</footer>
+
+<script src="/js/api.js"></script>
+<script>
+  (async () => {
+    const user = await getCurrentUser();
+    renderNav(user);
+    const pkgs = await api("/packages");
+    const grid = document.getElementById("pkgGrid");
+    grid.innerHTML = pkgs
+      .map(
+        (p) => `
+      <div class="pkg-card">
+        ${p.is_popular ? '<div class="badge-popular">Most Popular</div>' : ""}
+        <div class="code">${p.code}</div>
+        <div class="name">${p.name}</div>
+        <div class="meta">${p.distance_km}km &middot; ${p.duration_label}</div>
+        <div class="price">${money(p.base_price)} <span class="muted" style="font-weight:400;font-size:0.75rem">/ rider</span></div>
+      </div>`
+      )
+      .join("");
+  })();
+</script>
+</body>
+</html>

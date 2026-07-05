@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Admin Dashboard - Rinching ATV</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="navbar" class="navbar"></div>
+<div class="container">
+  <h2>Admin Dashboard</h2>
+  <div id="alertBox"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="payments">Pending Payments</button>
+    <button class="tab-btn" data-tab="bookings">All Bookings</button>
+    <button class="tab-btn" data-tab="summary">Daily Summary</button>
+  </div>
+
+  <div class="tab-panel active" id="panel-payments">
+    <div class="card">
+      <h3>Bank Transfers Awaiting Verification</h3>
+      <p class="muted">Approve or reject bookings paid via manual bank transfer. Card payments are auto-verified instantly.</p>
+      <table id="paymentsTable"><thead><tr><th>Booking</th><th>Customer</th><th>Ride</th><th>Amount</th><th>Reference</th><th>Action</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panel-bookings">
+    <div class="card">
+      <div class="flex-between">
+        <h3>All Bookings</h3>
+        <div>
+          <input type="date" id="filterDate" />
+          <select id="filterStatus">
+            <option value="">All statuses</option>
+            <option value="hold">Hold</option>
+            <option value="pending_verification">Pending Verification</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="refunded">Refunded</option>
+            <option value="expired">Expired</option>
+            <option value="payment_rejected">Payment Rejected</option>
+          </select>
+          <button class="btn small" id="filterBtn">Filter</button>
+        </div>
+      </div>
+      <table id="bookingsTable">
+        <thead><tr><th>Ref</th><th>Customer</th><th>Package</th><th>Date/Time</th><th>Pax</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panel-summary">
+    <div class="card">
+      <h3>Daily Operations Summary</h3>
+      <label>Date</label>
+      <input type="date" id="summaryDate" />
+      <div id="summaryOut"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for booking actions -->
+<div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(10,20,40,0.5);align-items:center;justify-content:center;z-index:50">
+  <div class="card" style="max-width:480px;width:92%" id="modalBody"></div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+let allBookings = [];
+
+function closeModal() { document.getElementById("modalOverlay").style.display = "none"; }
+function openModal(html) {
+  document.getElementById("modalBody").innerHTML = html + `<div style="text-align:right;margin-top:14px"><button class="btn outline small" onclick="closeModal()">Close</button></div>`;
+  document.getElementById("modalOverlay").style.display = "flex";
+}
+
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+async function loadPendingPayments() {
+  const bookings = await api("/bookings?status=pending_verification");
+  const tbody = document.querySelector("#paymentsTable tbody");
+  if (!bookings.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="muted">No bank transfers waiting for verification.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = bookings
+    .map(
+      (b) => `<tr>
+      <td>#RATV-${String(b.id).padStart(5, "0")}</td>
+      <td>${b.customer_name}<br><span class="muted">${b.customer_email}</span></td>
+      <td>${b.package_code} &middot; ${fmtDate(b.booking_date)} ${b.time_slot}</td>
+      <td>${money(b.deposit_amount)}</td>
+      <td id="ref-${b.id}" class="muted">loading…</td>
+      <td>
+        <button class="btn small success" onclick="verifyPayment(${b.id}, true)">Approve</button>
+        <button class="btn small danger" onclick="verifyPayment(${b.id}, false)">Reject</button>
+      </td>
+    </tr>`
+    )
+    .join("");
+  bookings.forEach(async (b) => {
+    const detail = await api(`/bookings/${b.id}`);
+    const pending = detail.payments.find((p) => p.status === "pending");
+    const el = document.getElementById("ref-" + b.id);
+    if (el) el.textContent = pending ? pending.reference : "-";
+  });
+}
+
+async function verifyPayment(id, approve) {
+  try {
+    await api(`/bookings/${id}/verify-payment`, { method: "POST", body: { approve } });
+    await loadPendingPayments();
+    await loadBookings();
+  } catch (err) {
+    showAlert(document.getElementById("alertBox"), err.message);
+  }
+}
+
+async function loadBookings() {
+  const date = document.getElementById("filterDate").value;
+  const status = document.getElementById("filterStatus").value;
+  const qs = new URLSearchParams();
+  if (date) qs.set("date", date);
+  if (status) qs.set("status", status);
+  allBookings = await api(`/bookings?${qs.toString()}`);
+  const tbody = document.querySelector("#bookingsTable tbody");
+  if (!allBookings.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="muted">No bookings match this filter.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = allBookings
+    .map(
+      (b) => `<tr>
+      <td>#RATV-${String(b.id).padStart(5, "0")}</td>
+      <td>${b.customer_name}</td>
+      <td>${b.package_code}</td>
+      <td>${fmtDate(b.booking_date)}<br>${b.time_slot}</td>
+      <td>${b.adult_count}A / ${b.child_count}C</td>
+      <td>${money(b.total_price)}</td>
+      <td><span class="badge ${b.status}">${statusLabel(b.status)}</span></td>
+      <td>
+        <button class="btn small outline" onclick="openManage(${b.id})">Manage</button>
+      </td>
+    </tr>`
+    )
+    .join("");
+}
+
+function openManage(id) {
+  const b = allBookings.find((x) => x.id === id);
+  openModal(`
+    <h3>Manage #RATV-${String(b.id).padStart(5, "0")}</h3>
+    <p class="muted">${b.customer_name} &middot; ${b.package_code} &middot; ${fmtDate(b.booking_date)} ${b.time_slot} &middot; <span class="badge ${b.status}">${statusLabel(b.status)}</span></p>
+
+    <h4>Reschedule</h4>
+    <div class="field-row">
+      <input type="date" id="reDate" value="${b.booking_date}" />
+      <input type="text" id="reTime" placeholder="HH:MM" value="${b.time_slot}" />
+    </div>
+    <button class="btn small" style="margin-top:8px" onclick="doAction(${b.id}, 'reschedule', {date: document.getElementById('reDate').value, time_slot: document.getElementById('reTime').value})">Reschedule</button>
+
+    <h4 style="margin-top:18px">Cancel Booking</h4>
+    <input type="text" id="cancelReason" placeholder="Reason (optional)" />
+    <button class="btn small danger" style="margin-top:8px" onclick="doAction(${b.id}, 'cancel', {reason: document.getElementById('cancelReason').value})">Cancel Booking</button>
+
+    <h4 style="margin-top:18px">Refund</h4>
+    <p class="help">Refunds the most recent verified payment (deposit).</p>
+    <input type="text" id="refundReason" placeholder="Refund reason" />
+    <button class="btn small" style="margin-top:8px" onclick="doRefund(${b.id})">Process Refund</button>
+
+    <h4 style="margin-top:18px">Confirmation</h4>
+    <button class="btn small success" ${b.status !== "confirmed" ? "disabled" : ""} onclick="sendConfirmation(${b.id})">Send Confirmation Email/SMS</button>
+    <div id="confirmOut" class="help" style="margin-top:8px"></div>
+  `);
+}
+
+async function doAction(id, action, extra) {
+  try {
+    await api(`/bookings/${id}`, { method: "PATCH", body: { action, ...extra } });
+    closeModal();
+    await loadBookings();
+    await loadPendingPayments();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function doRefund(id) {
+  const reason = document.getElementById("refundReason").value;
+  try {
+    await api(`/bookings/${id}/refund`, { method: "POST", body: { reason } });
+    closeModal();
+    await loadBookings();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function sendConfirmation(id) {
+  try {
+    const res = await api(`/bookings/${id}/send-confirmation`, { method: "POST" });
+    document.getElementById("confirmOut").textContent = "Sent (simulated): " + res.notification.message.split("\n")[0];
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function loadSummary() {
+  const date = document.getElementById("summaryDate").value;
+  const out = document.getElementById("summaryOut");
+  if (!date) { out.innerHTML = ""; return; }
+  const s = await api(`/schedule/day-summary?date=${date}`);
+  if (s.blockedDay) {
+    out.innerHTML = `<div class="alert info">Park closed on this date: ${s.blockedDay}</div>`;
+    return;
+  }
+  out.innerHTML = `
+    <div class="summary-grid">
+      <div class="summary-box"><div class="num">${s.totalPax}</div><div class="label">Total Pax</div></div>
+      <div class="summary-box"><div class="num">${s.totalAtvsInUse}/${s.atvInventory}</div><div class="label">ATVs In Use</div></div>
+      <div class="summary-box"><div class="num">${s.marshallsNeeded}</div><div class="label">Marshalls Needed</div></div>
+      <div class="summary-box"><div class="num">${s.bookings.length}</div><div class="label">Bookings</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Time</th><th>Package</th><th>Customer</th><th>Pax</th><th>Status</th></tr></thead>
+      <tbody>
+        ${s.bookings.map((b) => `<tr><td>${b.time_slot}</td><td>${b.package_code}</td><td>${b.customer_name}</td><td>${b.adult_count}A/${b.child_count}C</td><td><span class="badge ${b.status}">${statusLabel(b.status)}</span></td></tr>`).join("") || '<tr><td colspan="5" class="muted">No bookings for this date.</td></tr>'}
+      </tbody>
+    </table>`;
+}
+
+(async () => {
+  const user = await guardPage(["admin"]);
+  if (!user) return;
+  const today = new Date().toISOString().slice(0, 10);
+  document.getElementById("summaryDate").value = today;
+  await loadPendingPayments();
+  await loadBookings();
+  await loadSummary();
+
+  document.getElementById("filterBtn").addEventListener("click", loadBookings);
+  document.getElementById("summaryDate").addEventListener("change", loadSummary);
+  document.getElementById("modalOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "modalOverlay") closeModal();
+  });
+})();
+</script>
+</body>
+</html>
