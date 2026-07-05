@@ -7,8 +7,11 @@ const toyyibpay = require("../lib/payments/toyyibpay");
 const router = express.Router();
 
 function appBaseUrl() {
-  // Strip trailing slashes and spaces entirely
-  const url = (process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 3000}`).trim();
+  let url = (process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 3000}`).trim();
+  // Ensure the URL has https:// so ToyyibPay doesn't treat it as a broken internal path
+  if (!url.startsWith("http")) {
+    url = "https://" + url;
+  }
   return url.replace(/\/+$/, ""); 
 }
 
@@ -108,7 +111,6 @@ router.post("/:id/pay", requireRole("customer"), async (req, res) => {
     if (method === "toyyibpay") {
       const base = appBaseUrl();
       
-      // Keep URLs absolutely plain (no query parameters)
       const returnUrl = `${base}/payment-return.html`;
       const callbackUrl = `${base}/api/bookings/payment-callback`;
 
