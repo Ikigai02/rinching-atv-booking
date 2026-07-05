@@ -7,12 +7,9 @@ const toyyibpay = require("../lib/payments/toyyibpay");
 const router = express.Router();
 
 function appBaseUrl() {
-  let url = (process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 3000}`).trim();
-  // Ensure the URL has https:// so ToyyibPay doesn't treat it as a broken internal path
-  if (!url.startsWith("http")) {
-    url = "https://" + url;
-  }
-  return url.replace(/\/+$/, ""); 
+  // HARDCODED to your exact Render URL to guarantee ToyyibPay generates a valid redirect.
+  // This bypasses any corrupted environment variables.
+  return "https://rinching-atv-booking.onrender.com";
 }
 
 function getPackage(id) {
