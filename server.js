@@ -4,7 +4,8 @@ const express = require("express");
 const session = require("express-session");
 const path = require("path");
 
-require("./db/database");
+// Synchronous database initialization
+require("./db/database"); 
 
 const authRoutes = require("./routes/auth");
 const packageRoutes = require("./routes/packages");
@@ -13,16 +14,14 @@ const scheduleRoutes = require("./routes/schedule");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Set the base URL dynamically from environment variable or default to localhost
 const BASE_URL = process.env.APP_BASE_URL || `http://localhost:${PORT}`;
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: false })); 
+app.use(express.urlencoded({ extended: false }));
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "rinching-atv-dev-secret-change-me",
+    secret: process.env.SESSION_SECRET || "rinching-atv-dev-secret",
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 1000 * 60 * 60 * 8 },
@@ -35,12 +34,6 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/schedule", scheduleRoutes);
 
 app.use(express.static(path.join(__dirname, "public")));
-
-// Make BASE_URL available to routes
-app.use((req, res, next) => {
-  res.locals.BASE_URL = BASE_URL;
-  next();
-});
 
 app.listen(PORT, () => {
   console.log(`Rinching ATV Booking System running at ${BASE_URL}`);
