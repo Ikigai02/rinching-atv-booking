@@ -22,16 +22,19 @@
     const user = await guardPage(["customer"]);
     if (!user) return;
 
-    const params = new URLSearchParams(window.location.search);
-    const bookingId = params.get("booking");
+    // Retrieve booking ID passed from localStorage
+    const bookingId = localStorage.getItem("pendingBookingId");
     const out = document.getElementById("out");
+    
     if (!bookingId) {
-      showAlert(out, "Missing booking reference.");
+      showAlert(out, "Missing booking reference. Your payment may have already been processed.");
       return;
     }
 
     try {
       const res = await api(`/bookings/${bookingId}/payment-status`);
+      localStorage.removeItem("pendingBookingId"); // Clear it so it isn't reused accidentally
+
       const b = res.booking;
       if (b.status === "confirmed") {
         out.innerHTML = `<div class="alert success"><strong>Payment confirmed!</strong> Booking #RATV-${String(b.id).padStart(5, "0")} is now confirmed. Admin will send your official confirmation shortly.</div>
