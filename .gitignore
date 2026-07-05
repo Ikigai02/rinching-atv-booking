@@ -1,0 +1,7 @@
+node_modules/
+db/rinching.db
+db/rinching.db-journal
+db/rinching.db-wal
+db/rinching.db-shm
+*.log
+.env

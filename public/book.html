@@ -79,6 +79,35 @@
         <label for="ackRefund" style="margin:0">I understand the deposit is non-refundable for cancellations made within 24 hours of the ride (see refund policy).</label>
       </div>
 
+          <!-- Legal Waiver Box -->
+      <div style="margin-top: 20px;">
+        <label>Liability Waiver & Indemnity Agreement</label>
+        <div style="height: 150px; overflow-y: scroll; border: 1px solid var(--border); padding: 12px; font-size: 0.8rem; background: #fff; border-radius: 5px; margin-bottom: 10px;">
+          <strong>RELEASE OF LIABILITY, WAIVER OF CLAIMS, ASSUMPTION OF RISKS AND INDEMNITY AGREEMENT</strong><br>
+          <em>By signing this document you will waive certain legal rights including the right to sue!</em><br><br>
+          
+          In consideration of renting and operating All Terrance Vehicle (ATV) at Rinching ATV Adventure Park (Rinching ATV), I hereby release Rinching ATV, its members, agents, employees, landlord, successors or assigns, from any and all liability, claims demands, actions, and causes of action whatsoever...<br><br>
+          
+          <strong>I acknowledge and represent that:</strong><br>
+          1.0 I have read the foregoing Release Of Liability, Waiver Of Claims, Assumption Of Risks and Indemnity Agreement, understand it, and sign it voluntarily.<br>
+          2.0 I am not pregnant and do not suffer from other medical conditions...<br>
+          3.0 I have not consumed alcohol or drugs...<br>
+          4.0 I will wear a helmet while riding...<br>
+          5.0 I will obey all rules and regulations...<br>
+          6.0 I will closely listen and follow instructions from the Marshall...<br>
+          7.0 I cannot wear open toed shoes, sandals or heels...<br>
+          8.0 I must listen to the Safety and Technical Briefing...<br>
+          9.0 I agree to pay for any and all damages to the equipment...<br>
+          10.0 If I am under 16 years old, I must have my parent or legal guardian sign.<br>
+          11.0 This agreement is continuing and shall remain in effect every time I use this facility.
+        </div>
+        
+        <div class="checkbox-row">
+          <input type="checkbox" id="ackWaiver" />
+          <label for="ackWaiver" style="margin:0; font-weight: bold; color: var(--red);">I have read, understood, and voluntarily agree to the Release of Liability and Waiver of Claims.</label>
+        </div>
+      </div>
+
       <div class="flex-between" style="margin-top:20px">
         <button class="btn outline" id="backTo1">Back</button>
         <button class="btn" id="toStep3">Review &amp; Hold Slot</button>
@@ -223,6 +252,7 @@ async function createHold() {
         child_count: parseInt(document.getElementById("childCount").value, 10),
         ack_age_policy: document.getElementById("ackAge").checked,
         ack_refund_policy: document.getElementById("ackRefund").checked,
+        ack_waiver: document.getElementById("ackWaiver").checked
       },
     });
     renderHold();
@@ -324,8 +354,8 @@ async function submitPayment() {
   document.getElementById("childCount").addEventListener("input", updatePricing);
   document.getElementById("backTo1").addEventListener("click", () => goStep(1));
   document.getElementById("toStep3").addEventListener("click", async () => {
-    if (!document.getElementById("ackAge").checked || !document.getElementById("ackRefund").checked) {
-      showAlert(document.getElementById("alertBox"), "Please acknowledge both policy checkboxes to continue.");
+    if (!document.getElementById("ackAge").checked || !document.getElementById("ackRefund").checked || !document.getElementById("ackWaiver").checked) {
+      showAlert(document.getElementById("alertBox"), "Please acknowledge all policies and the liability waiver to continue.");
       return;
     }
     goStep(3);

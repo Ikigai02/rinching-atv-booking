@@ -39,7 +39,7 @@ a:hover { text-decoration: underline; }
   gap: 10px;
 }
 .navbar .brand { font-weight: 800; font-size: 1.15rem; letter-spacing: 0.3px; }
-.navbar .brand span { color: #7fb2ff; }
+.navbar .brand span { color: #ff9d7f; }
 .navbar nav { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
 .navbar nav a, .navbar nav button {
   color: #fff; font-weight: 600; font-size: 0.92rem; background: none; border: none; cursor: pointer;
@@ -54,9 +54,13 @@ a:hover { text-decoration: underline; }
 .narrow { max-width: 520px; }
 
 .hero {
-  background: linear-gradient(135deg, var(--navy), var(--blue-dark) 60%, var(--blue));
+  /* Adds a dark overlay (60% black) on top of your new background image */
+  background: linear-gradient(rgba(11, 29, 58, 0.7), rgba(11, 29, 58, 0.7)), url('/image/hero-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   color: #fff;
-  padding: 60px 20px;
+  padding: 80px 20px; /* Slightly taller padding looks better with images */
   text-align: center;
 }
 .hero h1 { font-size: 2.3rem; margin: 0 0 10px; }

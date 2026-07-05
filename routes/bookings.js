@@ -58,9 +58,11 @@ router.get("/availability", (req, res) => {
 });
 
 router.post("/", requireRole("customer"), (req, res) => {
-  const { package_id, date, time_slot, adult_count = 1, child_count = 0, ack_age_policy, ack_refund_policy } = req.body;
+  // 1. Destructure ack_waiver from the incoming request body
+  const { package_id, date, time_slot, adult_count = 1, child_count = 0, ack_age_policy, ack_refund_policy, ack_waiver } = req.body;
 
-  if (!package_id || !date || !time_slot || !ack_age_policy || !ack_refund_policy) {
+  // 2. Validate that all three policies were agreed to
+  if (!package_id || !date || !time_slot || !ack_age_policy || !ack_refund_policy || !ack_waiver) {
     return res.status(400).json({ error: "Missing required booking details or policy acknowledgement." });
   }
 
@@ -84,9 +86,10 @@ router.post("/", requireRole("customer"), (req, res) => {
   const balanceDue = Math.round((totalPrice - depositAmount) * 100) / 100;
   const holdExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ");
 
+  // 3. Update the SQL Insert to dynamically save 1 (True) or 0 (False) for all three policies
   const info = db
-    .prepare(`INSERT INTO bookings (customer_id, package_id, booking_date, time_slot, adult_count, child_count, total_price, deposit_amount, balance_due, status, hold_expires_at, ack_age_policy, ack_refund_policy) VALUES (?,?,?,?,?,?,?,?,?, 'hold', ?, 1, 1)`)
-    .run(req.session.user.id, package_id, date, time_slot, adults, children, totalPrice, depositAmount, balanceDue, holdExpiresAt);
+    .prepare(`INSERT INTO bookings (customer_id, package_id, booking_date, time_slot, adult_count, child_count, total_price, deposit_amount, balance_due, status, hold_expires_at, ack_age_policy, ack_refund_policy, ack_waiver) VALUES (?,?,?,?,?,?,?,?,?, 'hold', ?, ?, ?, ?)`)
+    .run(req.session.user.id, package_id, date, time_slot, adults, children, totalPrice, depositAmount, balanceDue, holdExpiresAt, ack_age_policy ? 1 : 0, ack_refund_policy ? 1 : 0, ack_waiver ? 1 : 0);
 
   res.status(201).json(getBookingWithDetails(info.lastInsertRowid));
 });
