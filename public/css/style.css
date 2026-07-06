@@ -39,7 +39,7 @@ a:hover { text-decoration: underline; }
   gap: 10px;
 }
 .navbar .brand { font-weight: 800; font-size: 1.15rem; letter-spacing: 0.3px; }
-.navbar .brand span { color: #ff9d7f; }
+.navbar .brand span { color: #ffcc41; }
 .navbar nav { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
 .navbar nav a, .navbar nav button {
   color: #fff; font-weight: 600; font-size: 0.92rem; background: none; border: none; cursor: pointer;
